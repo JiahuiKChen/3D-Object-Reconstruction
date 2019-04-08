@@ -4,7 +4,7 @@ import numpy as np
 from os import listdir
 from os.path import join, isfile
 
-def get_voxel_dataset():
+def get_voxel_dataset(batch_size=64):
     '''
     Setup our dataset object for our voxelizations.
     '''
@@ -36,13 +36,26 @@ def get_voxel_dataset():
                 files.append(file_path)
 
     def _load_voxel(filename):
-        return np.load(filename.numpy())
+        voxel_data = np.load(filename.numpy())
+        return (voxel_data, voxel_data)
 
+    # Create dataset as file names. These are mapped when dataset
+    # is queried for next batch via _load_voxel to the full
+    # voxel representation.
     dataset = tf.data.Dataset.from_tensor_slices(files)
     dataset = dataset.map(
         lambda filename: tuple(tf.py_function(
-            _load_voxel, [filename], [tf.float64])))
-    dataset = dataset.batch(64)
+            _load_voxel, [filename], [tf.float64, tf.float64])))
     dataset = dataset.repeat()
+    dataset = dataset.batch(batch_size)
 
-    return dataset
+    return dataset, len(files) // batch_size
+
+if __name__ == '__main__':
+    dataset, n_ = get_voxel_dataset(batch_size=1)
+    iterator = dataset.make_one_shot_iterator()
+    next_element = iterator.get_next()
+
+    with tf.Session() as sess:
+        data = sess.run(next_element)
+        print(data)

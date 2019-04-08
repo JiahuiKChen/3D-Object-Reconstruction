@@ -1,12 +1,12 @@
 import numpy as np
-from keras.models import Model, Sequential
-from keras.layers.normalization import BatchNormalization
-from keras.layers import Flatten, Conv3D, Dense, Conv1D, Input, Reshape, Conv3DTranspose
-from keras.engine.input_layer import Input
-from keras.losses import logcosh
-from keras.regularizers import l2
-from keras import backend as K
+from tensorflow.keras.models import Model, Sequential
+from tensorflow.keras.layers import Flatten, Conv3D, Dense, Conv1D, Input, Reshape, Conv3DTranspose, BatchNormalization
+from tensorflow.keras.losses import logcosh
+from tensorflow.keras.regularizers import l2
+from tensorflow.keras import backend as K
+from tensorflow.keras.callbacks import ModelCheckpoint, TensorBoard
 
+from Voxel_Dataset import get_voxel_dataset
 
 ################### MODIFIED BINARY CROSS ENTROPY LOSS FUNCTION ############
 # Binary cross entropy but with a lambda parameter that
@@ -108,5 +108,20 @@ ae = Model(inputs=voxel_input, outputs=reconstruction)
 
 ae.summary()
 
-# Train using custom loss, and adam optimizer
+# Setup training using custom loss, and adam optimizer
 ae.compile(optimizer='adam', loss=lambda_binary_crossentropy)
+
+# Get tf.data.Dataset of our voxels.
+voxel_dataset, steps_epoch = get_voxel_dataset(batch_size=64)
+
+# Setup callbacks for saving and for viewing progress.
+callbacks = [
+  # Save model after every epoch.
+  ModelCheckpoint("model/voxel_ae"),
+
+  # Track progress w/ TensorBoard
+  TensorBoard()
+]
+
+# Train on voxel dataset!
+ae.fit(voxel_dataset, epochs=10, callbacks=callbacks, batch_size=64, steps_per_epoch=steps_epoch, shuffle=False)
