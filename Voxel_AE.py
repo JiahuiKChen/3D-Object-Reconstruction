@@ -1,24 +1,33 @@
 import numpy as np
+import tensorflow as tf
+tf.enable_eager_execution()
+
 from tensorflow.keras.models import Model, Sequential
 from tensorflow.keras.layers import Flatten, Conv3D, Dense, Conv1D, Input, Reshape, Conv3DTranspose, BatchNormalization
 from tensorflow.keras.losses import logcosh
 from tensorflow.keras.regularizers import l2
 from tensorflow.keras import backend as K
 from tensorflow.keras.callbacks import ModelCheckpoint, TensorBoard
+from tensorflow import GradientTape
+from tensorflow.train import Saver
+from tensorflow import Session
+from tensorflow.train import AdamOptimizer
 
 from Voxel_Dataset import get_voxel_dataset
+
+# Debug:
+import pdb
 
 ################### MODIFIED BINARY CROSS ENTROPY LOSS FUNCTION ############
 # Binary cross entropy but with a lambda parameter that
 # encourages false positives and discourage false negatives (because of the high
 # amounts of blank voxels, without this term the model would output empty voxels)
 def lambda_binary_crossentropy(y_true, y_pred):
-  output = K.clip(y_pred, 0.1, 1)
-  binary_entr = -0.97 * y_true * K.log(output) - (0.03) * (1-y_true) * K.log(1-output)
+  binary_entr = -0.97 * y_true * tf.log(y_pred) - (0.03) * (1-y_true) * tf.log(1-y_pred)
 
   # getting tensor values into scalar
-  loss = K.sum(binary_entr, axis=1)
-  scalar_loss = K.mean(loss)
+  loss = tf.reduce_sum(binary_entr, axis=1)
+  scalar_loss = tf.reduce_mean(loss)
 
   return scalar_loss
 
@@ -109,19 +118,52 @@ ae = Model(inputs=voxel_input, outputs=reconstruction)
 ae.summary()
 
 # Setup training using custom loss, and adam optimizer
-ae.compile(optimizer='adam', loss=lambda_binary_crossentropy)
+# ae.compile(optimizer='adam', loss=lambda_binary_crossentropy)
 
 # Get tf.data.Dataset of our voxels.
 voxel_dataset, steps_epoch = get_voxel_dataset(batch_size=64)
+# iterator = voxel_dataset.make_one_shot_iterator()
+# next_element = iterator.get_next()
 
-# Setup callbacks for saving and for viewing progress.
-callbacks = [
-  # Save model after every epoch.
-  ModelCheckpoint("model/voxel_ae"),
+# # Setup callbacks for saving and for viewing progress.
+# callbacks = [
+#   # Save model after every epoch.
+#   ModelCheckpoint("model/voxel_ae"),
 
-  # Track progress w/ TensorBoard
-  TensorBoard()
-]
+#   # Track progress w/ TensorBoard
+#   TensorBoard()
+# ]
 
-# Train on voxel dataset!
-ae.fit(voxel_dataset, epochs=10, callbacks=callbacks, batch_size=64, steps_per_epoch=steps_epoch, shuffle=False)
+# # Train on voxel dataset!
+# ae.fit(voxel_dataset, epochs=10, callbacks=callbacks, batch_size=64, steps_per_epoch=steps_epoch, shuffle=False)
+
+# Settings:
+EPOCHS = 10
+
+# Use Adam optimizer.
+optimizer = AdamOptimizer(1e-4)
+
+# Gradient computation.
+def compute_gradients(model, x):
+  input_tensor = tf.cast(x[0], dtype=tf.float32)
+  with GradientTape() as tape:
+    y = model(input_tensor)
+    loss = lambda_binary_crossentropy(input_tensor, y)
+    return tape.gradient(loss, model.trainable_variables)
+
+# Apply gradient update to our model.
+def apply_gradients(optimizer, gradients, variables):
+  optimizer.apply_gradients(zip(gradients, variables))
+
+for epoch in range(1, EPOCHS + 1):
+  # Run our dataset through.
+
+  print "Epoch: ", epoch
+  for train_x in voxel_dataset:
+    gradients = compute_gradients(ae, train_x)
+    apply_gradients(optimizer, gradients, ae.trainable_variables)
+
+  # Checkpoint model.
+  model.save_weights('model/ae_checkpoint')
+
+  # TODO: Validation set?
