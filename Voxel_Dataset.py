@@ -35,6 +35,8 @@ def get_voxel_dataset(batch_size=64):
             if isfile(file_path):
                 files.append(file_path)
 
+    print "Dataset size: ", len(files)
+                
     def _load_voxel(filename):
         voxel_data = tf.convert_to_tensor(np.load(filename.numpy()))
         
@@ -50,7 +52,7 @@ def get_voxel_dataset(batch_size=64):
     dataset = dataset.map(
         lambda filename: tuple(tf.py_function(
             _load_voxel, [filename], [tf.float64])))
-    dataset = dataset.repeat()
+    # dataset = dataset.repeat() # Don't need this because of our current eager execution approach.
     dataset = dataset.batch(batch_size)
 
     return dataset, len(files) // batch_size

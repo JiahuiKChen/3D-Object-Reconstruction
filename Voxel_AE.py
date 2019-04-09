@@ -1,4 +1,5 @@
 import numpy as np
+import time
 import tensorflow as tf
 tf.enable_eager_execution()
 
@@ -23,7 +24,8 @@ import pdb
 # encourages false positives and discourage false negatives (because of the high
 # amounts of blank voxels, without this term the model would output empty voxels)
 def lambda_binary_crossentropy(y_true, y_pred):
-  binary_entr = -0.97 * y_true * tf.log(y_pred) - (0.03) * (1-y_true) * tf.log(1-y_pred)
+  y_pred = tf.clip_by_value(y_pred, 1e-7, 1.0 - 1e-7)
+  binary_entr = (-0.97 * y_true * tf.log(y_pred)) - ((0.03) * (1.0-y_true) * tf.log(1.0-y_pred))
 
   # getting tensor values into scalar
   loss = tf.reduce_sum(binary_entr, axis=1)
@@ -121,7 +123,7 @@ ae.summary()
 # ae.compile(optimizer='adam', loss=lambda_binary_crossentropy)
 
 # Get tf.data.Dataset of our voxels.
-voxel_dataset, steps_epoch = get_voxel_dataset(batch_size=64)
+voxel_dataset, steps_epoch = get_voxel_dataset(batch_size=128)
 # iterator = voxel_dataset.make_one_shot_iterator()
 # next_element = iterator.get_next()
 
@@ -149,21 +151,42 @@ def compute_gradients(model, x):
   with GradientTape() as tape:
     y = model(input_tensor)
     loss = lambda_binary_crossentropy(input_tensor, y)
-    return tape.gradient(loss, model.trainable_variables)
+    return tape.gradient(loss, model.trainable_variables), loss
 
 # Apply gradient update to our model.
 def apply_gradients(optimizer, gradients, variables):
   optimizer.apply_gradients(zip(gradients, variables))
 
-for epoch in range(1, EPOCHS + 1):
-  # Run our dataset through.
+# Setup logging.
+summary_writer = tf.contrib.summary.create_file_writer('./logs')
 
+i = 0
+for epoch in range(1, EPOCHS + 1):
+  # Run through dataset doing batch updates.
   print "Epoch: ", epoch
-  for train_x in voxel_dataset:
-    gradients = compute_gradients(ae, train_x)
+
+  t0 = time.time()
+  for train_x in voxel_dataset: # Pulls batches from tf.data.Dataset
+    i += 1
+    gradients, loss = compute_gradients(ae, train_x)
+    #print i, ",", loss
     apply_gradients(optimizer, gradients, ae.trainable_variables)
+    
+    # Track loss through time.
+    if i % 100 == 0:
+      with summary_writer.as_default():
+        with tf.contrib.summary.always_record_summaries():
+          tf.contrib.summary.scalar("loss", loss, step=i)
+    
+  t1 = time.time()
+  epoch_time = t1 - t0
+
+  # Track time for epochs.
+  with summary_writer.as_default():
+    with tf.contrib.summary.always_record_summaries():
+      tf.contrib.summary.scalar("epoch_time", epoch_time, step = epoch)
 
   # Checkpoint model.
-  model.save_weights('model/ae_checkpoint')
+  ae.save_weights('model/ae_checkpoint')
 
   # TODO: Validation set?
