@@ -49,6 +49,7 @@ def get_voxel_dataset(batch_size=64):
     # is queried for next batch via _load_voxel to the full
     # voxel representation.
     dataset = tf.data.Dataset.from_tensor_slices(files)
+    dataset = dataset.shuffle(buffer_size=10000)
     dataset = dataset.map(
         lambda filename: tuple(tf.py_function(
             _load_voxel, [filename], [tf.float64])))
