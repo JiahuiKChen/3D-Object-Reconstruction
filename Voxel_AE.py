@@ -15,6 +15,7 @@ from tensorflow import Session
 from tensorflow.train import AdamOptimizer
 
 from Voxel_Dataset import get_voxel_dataset
+from Show_Voxel import plot_voxel, convert_to_sparse_voxel_grid
 
 # Debug:
 import pdb
@@ -122,71 +123,94 @@ ae.summary()
 # Setup training using custom loss, and adam optimizer
 # ae.compile(optimizer='adam', loss=lambda_binary_crossentropy)
 
-# Get tf.data.Dataset of our voxels.
-voxel_dataset, steps_epoch = get_voxel_dataset(batch_size=128)
-# iterator = voxel_dataset.make_one_shot_iterator()
-# next_element = iterator.get_next()
+TRAIN = False
 
-# # Setup callbacks for saving and for viewing progress.
-# callbacks = [
-#   # Save model after every epoch.
-#   ModelCheckpoint("model/voxel_ae"),
-
-#   # Track progress w/ TensorBoard
-#   TensorBoard()
-# ]
-
-# # Train on voxel dataset!
-# ae.fit(voxel_dataset, epochs=10, callbacks=callbacks, batch_size=64, steps_per_epoch=steps_epoch, shuffle=False)
-
-# Settings:
-EPOCHS = 10
-
-# Use Adam optimizer.
-optimizer = AdamOptimizer(1e-4)
-
-# Gradient computation.
-def compute_gradients(model, x):
-  input_tensor = tf.cast(x[0], dtype=tf.float32)
-  with GradientTape() as tape:
-    y = model(input_tensor)
-    loss = lambda_binary_crossentropy(input_tensor, y)
-    return tape.gradient(loss, model.trainable_variables), loss
-
-# Apply gradient update to our model.
-def apply_gradients(optimizer, gradients, variables):
-  optimizer.apply_gradients(zip(gradients, variables))
-
-# Setup logging.
-summary_writer = tf.contrib.summary.create_file_writer('./logs')
-
-i = 0
-for epoch in range(1, EPOCHS + 1):
-  # Run through dataset doing batch updates.
-  print "Epoch: ", epoch
+if TRAIN:
+  # Get tf.data.Dataset of our voxels.
+  voxel_dataset, steps_epoch = get_voxel_dataset(batch_size=128)
+  # iterator = voxel_dataset.make_one_shot_iterator()
+  # next_element = iterator.get_next()
   
-  t0 = time.time()
-  for train_x in voxel_dataset: # Pulls batches from tf.data.Dataset
-    i += 1
-    gradients, loss = compute_gradients(ae, train_x)
-    #print i, ",", loss
-    apply_gradients(optimizer, gradients, ae.trainable_variables)
-    
-    # Track loss through time.
-    if i % 100 == 0:
-      with summary_writer.as_default():
-        with tf.contrib.summary.always_record_summaries():
-          tf.contrib.summary.scalar("loss", loss, step=i)
-    
-  t1 = time.time()
-  epoch_time = t1 - t0
+  # # Setup callbacks for saving and for viewing progress.
+  # callbacks = [
+  #   # Save model after every epoch.
+  #   ModelCheckpoint("model/voxel_ae"),
 
-  # Track time for epochs.
-  with summary_writer.as_default():
-    with tf.contrib.summary.always_record_summaries():
-      tf.contrib.summary.scalar("epoch_time", epoch_time, step = epoch)
+  #   # Track progress w/ TensorBoard
+  #   TensorBoard()
+  # ]
 
-  # Checkpoint model.
-  ae.save_weights('model/ae_checkpoint')
+  # # Train on voxel dataset!
+  # ae.fit(voxel_dataset, epochs=10, callbacks=callbacks, batch_size=64, steps_per_epoch=steps_epoch, shuffle=False)
 
-  # TODO: Validation set?
+  # Settings:
+  EPOCHS = 10
+
+  # Use Adam optimizer.
+  optimizer = AdamOptimizer(1e-4)
+
+  # Gradient computation.
+  def compute_gradients(model, x):
+    input_tensor = tf.cast(x[0], dtype=tf.float32)
+    with GradientTape() as tape:
+      y = model(input_tensor)
+      loss = lambda_binary_crossentropy(input_tensor, y)
+      return tape.gradient(loss, model.trainable_variables), loss
+
+  # Apply gradient update to our model.
+  def apply_gradients(optimizer, gradients, variables):
+    optimizer.apply_gradients(zip(gradients, variables))
+
+  # Setup logging.
+  summary_writer = tf.contrib.summary.create_file_writer('./logs')
+
+  i = 0
+  for epoch in range(1, EPOCHS + 1):
+    # Run through dataset doing batch updates.
+    print "Epoch: ", epoch
+
+    t0 = time.time()
+    for train_x in voxel_dataset: # Pulls batches from tf.data.Dataset
+      i += 1
+      gradients, loss = compute_gradients(ae, train_x)
+      #print i, ",", loss
+      apply_gradients(optimizer, gradients, ae.trainable_variables)
+
+      # Track loss through time.
+      if i % 100 == 0:
+        with summary_writer.as_default():
+          with tf.contrib.summary.always_record_summaries():
+            tf.contrib.summary.scalar("loss", loss, step=i)
+
+    t1 = time.time()
+    epoch_time = t1 - t0
+
+    # Track time for epochs.
+    with summary_writer.as_default():
+      with tf.contrib.summary.always_record_summaries():
+        tf.contrib.summary.scalar("epoch_time", epoch_time, step = epoch)
+
+    # Checkpoint model.
+    ae.save_weights('model/ae_checkpoint')
+
+    # TODO: Validation set?
+else:
+  # Load model from checkpoint.
+  ae.load_weights('model/ae_checkpoint')
+  
+  # Get tf.data.Dataset of our voxels.
+  voxel_dataset, steps_epoch = get_voxel_dataset(batch_size=1)
+
+  for train_x in voxel_dataset:
+    # View input.
+    input_tensor = tf.cast(train_x[0], dtype=tf.float32)
+    input_npy = input_tensor.numpy().reshape((32,32,32))
+    input_npy = (input_npy + 1) // 3
+    input_sparse = convert_to_sparse_voxel_grid(input_npy)
+    plot_voxel(input_sparse, voxel_res=(32,32,32))
+
+    # Generate and view reconstruction.
+    y = ae(input_tensor)
+    y = y.numpy().reshape((32,32,32))
+    y_sparse = convert_to_sparse_voxel_grid(y)
+    plot_voxel(y_sparse, voxel_res=(32,32,32))
