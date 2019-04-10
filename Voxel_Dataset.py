@@ -25,7 +25,7 @@ def get_voxel_dataset(batch_size=64):
         'ModelNet40'
     ]
 
-    # Files holds the files as: subfolder/filename.npy.
+    # Files holds the files as: subfolder/filename.npy. - each file is a voxel
     files = []
     for subfolder in subfolders:
         print subfolder
@@ -36,20 +36,25 @@ def get_voxel_dataset(batch_size=64):
                 files.append(file_path)
 
     print "Dataset size: ", len(files)
-                
+
+    # Shuffling file names (so that dataset of voxels is randomized)
+    random.shuffle(files)
+
+    # returns 1 voxel in the form of a tensor
     def _load_voxel(filename):
         voxel_data = tf.convert_to_tensor(np.load(filename.numpy()))
-        
+
         # Convert to {-1, 2} as specified in the paper.
         voxel_data = 3. * voxel_data - 1
-        
+
         return tf.reshape(voxel_data, (32,32,32,1))
 
     # Create dataset as file names. These are mapped when dataset
     # is queried for next batch via _load_voxel to the full
     # voxel representation.
     dataset = tf.data.Dataset.from_tensor_slices(files)
-    dataset = dataset.shuffle(buffer_size=10000)
+    # dataset = dataset.shuffle(buffer_size=10000)
+    # Converting dataset of voxel file names to dataset of voxels
     dataset = dataset.map(
         lambda filename: tuple(tf.py_function(
             _load_voxel, [filename], [tf.float64])))

@@ -126,8 +126,6 @@ ae.summary()
 TRAIN = False
 
 if TRAIN:
-  # Get tf.data.Dataset of our voxels.
-  voxel_dataset, steps_epoch = get_voxel_dataset(batch_size=128)
   # iterator = voxel_dataset.make_one_shot_iterator()
   # next_element = iterator.get_next()
 
@@ -168,9 +166,12 @@ if TRAIN:
   for epoch in range(1, EPOCHS + 1):
     # Run through dataset doing batch updates.
     print "Epoch: ", epoch
-
     t0 = time.time()
-    # Pulls batches from tf.data.Dataset
+
+    # Gets newly shuffled dataset of voxels each epochs
+    voxel_dataset, steps_epoch = get_voxel_dataset(batch_size=128)
+
+    # Trains over all batches of the shuffled dataset
     for train_x in voxel_dataset:
       i += 1
       gradients, loss = compute_gradients(ae, train_x)
