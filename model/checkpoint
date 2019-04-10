@@ -1,0 +1,2 @@
+model_checkpoint_path: "ae_checkpoint"
+all_model_checkpoint_paths: "ae_checkpoint"

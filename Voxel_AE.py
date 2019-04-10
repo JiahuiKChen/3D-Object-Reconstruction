@@ -164,7 +164,7 @@ i = 0
 for epoch in range(1, EPOCHS + 1):
   # Run through dataset doing batch updates.
   print "Epoch: ", epoch
-
+  
   t0 = time.time()
   for train_x in voxel_dataset: # Pulls batches from tf.data.Dataset
     i += 1
