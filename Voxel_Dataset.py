@@ -1,5 +1,6 @@
 import tensorflow as tf
 import numpy as np
+import random
 
 from os import listdir
 from os.path import join, isfile
@@ -60,6 +61,7 @@ def get_voxel_dataset(batch_size=64):
             _load_voxel, [filename], [tf.float64])))
     # dataset = dataset.repeat() # Don't need this because of our current eager execution approach.
     dataset = dataset.batch(batch_size)
+    dataset = dataset.prefetch(1)
 
     return dataset, len(files) // batch_size
 

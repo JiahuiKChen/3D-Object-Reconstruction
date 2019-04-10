@@ -123,7 +123,7 @@ ae.summary()
 # Setup training using custom loss, and adam optimizer
 # ae.compile(optimizer='adam', loss=lambda_binary_crossentropy)
 
-TRAIN = False
+TRAIN = True
 
 if TRAIN:
   # iterator = voxel_dataset.make_one_shot_iterator()
@@ -173,7 +173,6 @@ if TRAIN:
 
     # Trains over all batches of the shuffled dataset
     for train_x in voxel_dataset:
-      i += 1
       gradients, loss = compute_gradients(ae, train_x)
       #print i, ",", loss
       apply_gradients(optimizer, gradients, ae.trainable_variables)
@@ -183,6 +182,8 @@ if TRAIN:
         with summary_writer.as_default():
           with tf.contrib.summary.always_record_summaries():
             tf.contrib.summary.scalar("loss", loss, step=i)
+      i += 1
+
 
     t1 = time.time()
     epoch_time = t1 - t0
@@ -191,6 +192,7 @@ if TRAIN:
     with summary_writer.as_default():
       with tf.contrib.summary.always_record_summaries():
         tf.contrib.summary.scalar("epoch_time", epoch_time, step = epoch)
+        tf.contrib.summary.scalar("epoch_loss", loss, step=epoch)
 
     # Checkpoint model.
     ae.save_weights('model/ae_checkpoint')
