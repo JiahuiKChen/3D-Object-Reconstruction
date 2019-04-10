@@ -25,8 +25,8 @@ import pdb
 # encourages false positives and discourage false negatives (because of the high
 # amounts of blank voxels, without this term the model would output empty voxels)
 def lambda_binary_crossentropy(y_true, y_pred):
-  y_pred = tf.clip_by_value(y_pred, 1e-7, 1.0 - 1e-7)
-  binary_entr = (-0.97 * y_true * tf.log(y_pred)) - ((0.03) * (1.0-y_true) * tf.log(1.0-y_pred))
+  y_pred = tf.clip_by_value(y_pred, 0.1, 1.0 - 1e-7)
+  binary_entr = (-0.98 * y_true * tf.log(y_pred)) - ((0.02) * (1.0-y_true) * tf.log(1.0-y_pred))
 
   # getting tensor values into scalar
   loss = tf.reduce_sum(binary_entr, axis=1)
@@ -130,7 +130,7 @@ if TRAIN:
   voxel_dataset, steps_epoch = get_voxel_dataset(batch_size=128)
   # iterator = voxel_dataset.make_one_shot_iterator()
   # next_element = iterator.get_next()
-  
+
   # # Setup callbacks for saving and for viewing progress.
   # callbacks = [
   #   # Save model after every epoch.
@@ -170,7 +170,8 @@ if TRAIN:
     print "Epoch: ", epoch
 
     t0 = time.time()
-    for train_x in voxel_dataset: # Pulls batches from tf.data.Dataset
+    # Pulls batches from tf.data.Dataset
+    for train_x in voxel_dataset:
       i += 1
       gradients, loss = compute_gradients(ae, train_x)
       #print i, ",", loss
@@ -197,7 +198,7 @@ if TRAIN:
 else:
   # Load model from checkpoint.
   ae.load_weights('model/ae_checkpoint')
-  
+
   # Get tf.data.Dataset of our voxels.
   voxel_dataset, steps_epoch = get_voxel_dataset(batch_size=1)
 
