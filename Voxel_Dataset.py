@@ -43,12 +43,13 @@ def get_voxel_dataset(batch_size=64):
 
     # returns 1 voxel in the form of a tensor
     def _load_voxel(filename):
-        voxel_data = tf.convert_to_tensor(np.load(filename.numpy()))
+        with tf.device('/cpu:0'):
+            voxel_data = tf.convert_to_tensor(np.load(filename.numpy()))
 
-        # Convert to {-1, 2} as specified in the paper.
-        voxel_data = 3. * voxel_data - 1
+            # Convert to {-1, 2} as specified in the paper.
+            voxel_data = 3. * voxel_data - 1
 
-        return tf.reshape(voxel_data, (32,32,32,1))
+            return tf.reshape(voxel_data, (32,32,32,1))
 
     # Create dataset as file names. These are mapped when dataset
     # is queried for next batch via _load_voxel to the full
@@ -61,7 +62,7 @@ def get_voxel_dataset(batch_size=64):
             _load_voxel, [filename], [tf.float64])))
     # dataset = dataset.repeat() # Don't need this because of our current eager execution approach.
     dataset = dataset.batch(batch_size)
-    dataset = dataset.prefetch(1)
+    #dataset = dataset.prefetch(4)
 
     return dataset, len(files) // batch_size
 

@@ -1,7 +1,9 @@
 import numpy as np
 import time
 import tensorflow as tf
-tf.enable_eager_execution()
+config = tf.ConfigProto()
+config.gpu_options.allow_growth = True
+tf.enable_eager_execution(config=config)
 
 from tensorflow.keras.models import Model, Sequential
 from tensorflow.keras.layers import Flatten, Conv3D, Dense, Conv1D, Input, Reshape, Conv3DTranspose, BatchNormalization
@@ -123,7 +125,7 @@ ae.summary()
 # Setup training using custom loss, and adam optimizer
 # ae.compile(optimizer='adam', loss=lambda_binary_crossentropy)
 
-TRAIN = True
+TRAIN = False
 
 if TRAIN:
   # iterator = voxel_dataset.make_one_shot_iterator()
@@ -169,7 +171,7 @@ if TRAIN:
     t0 = time.time()
 
     # Gets newly shuffled dataset of voxels each epochs
-    voxel_dataset, steps_epoch = get_voxel_dataset(batch_size=128)
+    voxel_dataset, steps_epoch = get_voxel_dataset(batch_size=64)
 
     # Trains over all batches of the shuffled dataset
     for train_x in voxel_dataset:
@@ -211,10 +213,12 @@ else:
     input_npy = input_tensor.numpy().reshape((32,32,32))
     input_npy = (input_npy + 1) // 3
     input_sparse = convert_to_sparse_voxel_grid(input_npy)
+    print "True:"
     plot_voxel(input_sparse, voxel_res=(32,32,32))
 
     # Generate and view reconstruction.
     y = ae(input_tensor)
     y = y.numpy().reshape((32,32,32))
     y_sparse = convert_to_sparse_voxel_grid(y)
+    print "Predict:"
     plot_voxel(y_sparse, voxel_res=(32,32,32))
