@@ -15,15 +15,15 @@ def get_voxel_dataset(batch_size=64):
 
     # Specify which subfolders in the dexnet dataset to include.
     subfolders = [
-        'amazon_picking_challenge',
-        'Cat50_ModelDatabase',
-        'NTU3D',
-        'SHREC14LSGTB',
-        'autodesk',
-        'KIT',
-        'PrincetonShapeBenchmark',
+        # 'amazon_picking_challenge',
+        # 'Cat50_ModelDatabase',
+        # 'NTU3D',
+        # 'SHREC14LSGTB',
+        # 'autodesk',
+        # 'KIT',
+        # 'PrincetonShapeBenchmark',
         # 'YCB', # Leave out YCB for testing.
-        'BigBIRD',
+        # 'BigBIRD',
         'ModelNet40'
     ]
 
@@ -56,8 +56,8 @@ def get_voxel_dataset(batch_size=64):
         voxel_data = tf.convert_to_tensor(np.load(filename.numpy()))
 
         # Convert to {-1, 2} as specified in the paper.
-        voxel_data = 3. * voxel_data - 1
-
+        # voxel_data = 3. * voxel_data - 1
+        
         return tf.reshape(voxel_data, (32,32,32,1))
 
     # Create dataset as file names. These are mapped when dataset

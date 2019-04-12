@@ -28,7 +28,7 @@ import pdb
 # amounts of blank voxels, without this term the model would output empty voxels)
 def lambda_binary_crossentropy(y_true, y_pred):
   y_pred = tf.clip_by_value(y_pred, 1e-7, 1.0 - 1e-7)
-  binary_entr = (-0.98 * y_true * tf.log(y_pred)) - ((0.02) * (1.0-y_true) * tf.log(1.0-y_pred))
+  binary_entr = (-y_true * tf.log(y_pred)) - ((1.0-y_true) * tf.log(1.0-y_pred))
 
   # getting tensor values into scalar
   loss = tf.reduce_sum(binary_entr, axis=1)
@@ -211,7 +211,7 @@ else:
     # View input.
     input_tensor = tf.cast(train_x[0], dtype=tf.float32)
     input_npy = input_tensor.numpy().reshape((32,32,32))
-    input_npy = (input_npy + 1) // 3
+    # input_npy = (input_npy + 1) // 3
     input_sparse = convert_to_sparse_voxel_grid(input_npy)
     print "True:"
     plot_voxel(input_sparse, voxel_res=(32,32,32))
