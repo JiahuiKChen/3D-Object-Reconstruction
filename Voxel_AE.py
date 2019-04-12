@@ -27,7 +27,7 @@ import pdb
 # encourages false positives and discourage false negatives (because of the high
 # amounts of blank voxels, without this term the model would output empty voxels)
 def lambda_binary_crossentropy(y_true, y_pred):
-  y_pred = tf.clip_by_value(y_pred, 0.1, 1.0 - 1e-7)
+  y_pred = tf.clip_by_value(y_pred, 1e-7, 1.0 - 1e-7)
   binary_entr = (-0.98 * y_true * tf.log(y_pred)) - ((0.02) * (1.0-y_true) * tf.log(1.0-y_pred))
 
   # getting tensor values into scalar
@@ -71,7 +71,7 @@ latent = Dense(100, use_bias=True, activation='elu',
 encoder = Model(inputs=voxel_input, outputs=latent)
 
 # Run this to get summary of encoder's layers
-encoder.summary()
+# encoder.summary()
 
 
 ########################## DECODER NETWORK #################################
@@ -125,7 +125,7 @@ ae.summary()
 # Setup training using custom loss, and adam optimizer
 # ae.compile(optimizer='adam', loss=lambda_binary_crossentropy)
 
-TRAIN = False
+TRAIN = True
 
 if TRAIN:
   # iterator = voxel_dataset.make_one_shot_iterator()

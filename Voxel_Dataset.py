@@ -1,6 +1,7 @@
 import tensorflow as tf
 import numpy as np
 import random
+random.seed(42)
 
 from os import listdir
 from os.path import join, isfile
@@ -39,17 +40,25 @@ def get_voxel_dataset(batch_size=64):
     print "Dataset size: ", len(files)
 
     # Shuffling file names (so that dataset of voxels is randomized)
-    random.shuffle(files)
+    # random.shuffle(files)
+    # train_file_size = int(len(files) * 0.9)
+    # print "Train size: ", train_file_size
+    # train = files[:train_file_size]
+    # test = files[train_file_size:]
+
+    # # Load in the files.
+    # voxel_dataset = list(map(lambda filename: np.reshape(np.load(filename), (32,32,32,1))))
+
+    # Create dataset from the loaded files.
 
     # returns 1 voxel in the form of a tensor
     def _load_voxel(filename):
-        with tf.device('/cpu:0'):
-            voxel_data = tf.convert_to_tensor(np.load(filename.numpy()))
+        voxel_data = tf.convert_to_tensor(np.load(filename.numpy()))
 
-            # Convert to {-1, 2} as specified in the paper.
-            voxel_data = 3. * voxel_data - 1
+        # Convert to {-1, 2} as specified in the paper.
+        voxel_data = 3. * voxel_data - 1
 
-            return tf.reshape(voxel_data, (32,32,32,1))
+        return tf.reshape(voxel_data, (32,32,32,1))
 
     # Create dataset as file names. These are mapped when dataset
     # is queried for next batch via _load_voxel to the full
