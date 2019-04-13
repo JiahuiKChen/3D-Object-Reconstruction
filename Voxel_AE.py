@@ -128,21 +128,6 @@ ae.summary()
 TRAIN = True
 
 if TRAIN:
-  # iterator = voxel_dataset.make_one_shot_iterator()
-  # next_element = iterator.get_next()
-
-  # # Setup callbacks for saving and for viewing progress.
-  # callbacks = [
-  #   # Save model after every epoch.
-  #   ModelCheckpoint("model/voxel_ae"),
-
-  #   # Track progress w/ TensorBoard
-  #   TensorBoard()
-  # ]
-
-  # # Train on voxel dataset!
-  # ae.fit(voxel_dataset, epochs=10, callbacks=callbacks, batch_size=64, steps_per_epoch=steps_epoch, shuffle=False)
-
   # Settings:
   EPOCHS = 10
 
@@ -186,7 +171,6 @@ if TRAIN:
             tf.contrib.summary.scalar("loss", loss, step=i)
       i += 1
 
-
     t1 = time.time()
     epoch_time = t1 - t0
 
@@ -219,6 +203,7 @@ else:
     # Generate and view reconstruction.
     y = ae(input_tensor)
     y = y.numpy().reshape((32,32,32))
+    print y
     y_sparse = convert_to_sparse_voxel_grid(y)
     print "Predict:"
     plot_voxel(y_sparse, voxel_res=(32,32,32))

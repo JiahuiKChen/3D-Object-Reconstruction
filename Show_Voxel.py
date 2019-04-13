@@ -65,7 +65,7 @@ def convert_to_sparse_voxel_grid(voxel_grid):
     for i in xrange(voxel_dim[0]):
         for j in xrange(voxel_dim[1]):
             for k in xrange(voxel_dim[2]):
-                if voxel_grid[i, j, k] == 1.:
+                if voxel_grid[i, j, k] > 0.5:
                     sparse_voxel_grid.append([i, j, k])
     return np.asarray(sparse_voxel_grid)
 

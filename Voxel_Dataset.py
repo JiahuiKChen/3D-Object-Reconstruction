@@ -15,15 +15,15 @@ def get_voxel_dataset(batch_size=64):
 
     # Specify which subfolders in the dexnet dataset to include.
     subfolders = [
-        # 'amazon_picking_challenge',
-        # 'Cat50_ModelDatabase',
-        # 'NTU3D',
-        # 'SHREC14LSGTB',
-        # 'autodesk',
-        # 'KIT',
-        # 'PrincetonShapeBenchmark',
+        'amazon_picking_challenge',
+        'Cat50_ModelDatabase',
+        'NTU3D',
+        'SHREC14LSGTB',
+        'autodesk',
+        'KIT',
+        'PrincetonShapeBenchmark',
         # 'YCB', # Leave out YCB for testing.
-        # 'BigBIRD',
+        'BigBIRD',
         'ModelNet40'
     ]
 
