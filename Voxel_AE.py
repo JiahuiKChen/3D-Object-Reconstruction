@@ -127,10 +127,14 @@ ae.summary()
 
 TRAIN = True
 
+model_checkpoint_file = 'model/ae_checkpoint'
+
 if TRAIN:
   # Settings:
-  EPOCHS = 10
+  EPOCHS = 100
 
+  ae.load_weights(model_checkpoint_file)
+  
   # Use Adam optimizer.
   optimizer = AdamOptimizer(1e-4)
 
@@ -149,8 +153,8 @@ if TRAIN:
   # Setup logging.
   summary_writer = tf.contrib.summary.create_file_writer('./logs')
 
-  i = 0
-  for epoch in range(1, EPOCHS + 1):
+  i = 40700
+  for epoch in range(10, EPOCHS + 1):
     # Run through dataset doing batch updates.
     print "Epoch: ", epoch
     t0 = time.time()
@@ -181,12 +185,12 @@ if TRAIN:
         tf.contrib.summary.scalar("epoch_loss", loss, step=epoch)
 
     # Checkpoint model.
-    ae.save_weights('model/ae_checkpoint')
+    ae.save_weights(model_checkpoint_file)
 
     # TODO: Validation set?
 else:
   # Load model from checkpoint.
-  ae.load_weights('model/ae_checkpoint')
+  ae.load_weights(model_checkpoint_file)
 
   # Get tf.data.Dataset of our voxels.
   voxel_dataset, steps_epoch = get_voxel_dataset(batch_size=1)
