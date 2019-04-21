@@ -62,7 +62,7 @@ ae = Model(inputs=voxel_input, outputs=reconstruction)
 # ae.summary()
 
 # Load already trained weights
-model_checkpoint_file = 'ae_checkpoint'
+model_checkpoint_file = 'model/ae_checkpoint'
 ae.load_weights(model_checkpoint_file)
 
 # Get Decoder portion of AE
