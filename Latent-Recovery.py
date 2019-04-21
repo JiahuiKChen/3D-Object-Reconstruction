@@ -17,18 +17,6 @@ from tensorflow.train import Saver
 from tensorflow import Session
 from tensorflow.train import AdamOptimizer
 
-################### MODIFIED BINARY CROSS ENTROPY LOSS FUNCTION ############
-# Binary cross entropy but with value clamping
-def lambda_binary_crossentropy(y_true, y_pred):
-  y_pred = tf.clip_by_value(y_pred, 1e-7, 1.0 - 1e-7)
-  binary_entr = (-y_true * tf.log(y_pred)) - ((1.0-y_true) * tf.log(1.0-y_pred))
-
-  # getting tensor values into scalar
-  loss = tf.reduce_sum(binary_entr, axis=1)
-  scalar_loss = tf.reduce_mean(loss)
-
-  return scalar_loss
-
 ################################# AUTOENCODER ###############################
 # (see Voxel_AE.py for more details)
 voxel_input = Input(shape=(32, 32, 32, 1))
