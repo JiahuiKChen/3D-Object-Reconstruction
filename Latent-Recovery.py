@@ -17,6 +17,11 @@ from tensorflow.train import Saver
 from tensorflow import Session
 from tensorflow.train import AdamOptimizer
 
+from Voxel_Dataset import get_voxel_dataset
+from Show_Voxel import *
+
+import pdb
+
 ################################# AUTOENCODER ###############################
 # (see Voxel_AE.py for more details)
 voxel_input = Input(shape=(32, 32, 32, 1))
@@ -69,6 +74,8 @@ ae.load_weights(model_checkpoint_file)
 decoder = ae.layers[2]
 decoder.summary()
 
+optimizer = AdamOptimizer(1e-4)
+
 ################### MODIFIED BINARY CROSS ENTROPY LOSS FUNCTION ############
 # Binary cross entropy but with value clamping
 def lambda_binary_crossentropy(y_true, y_pred):
@@ -83,10 +90,11 @@ def lambda_binary_crossentropy(y_true, y_pred):
 
 # Gradient computation with given model, input latent space, and partial voxel
 def compute_gradients(model, latent, partial):
-#   input_tensor = tf.cast(x[0], dtype=tf.float32)
   with GradientTape() as tape:
     tape.watch(latent)
     y = model(latent)
+
+    partial = tf.cast(partial[0], dtype=tf.float32)
     loss = lambda_binary_crossentropy(partial, y)
 
     return tape.gradient(loss, latent), loss
@@ -116,7 +124,24 @@ def recover_latent(partial, loss_thresh):
     optimizer.apply_gradients(zip([gradients], [curr_latent]))
     iter += 1
 
-# Testing on dummy voxel
-dummy_vox = tf.random.uniform(shape=(32, 32, 32))
+    if iter % 100 == 0:
+      current_prediction = decoder(curr_latent)
+      current_prediction = np.reshape(current_prediction.numpy(), (32,32,32))
+      plot_voxel(convert_to_sparse_voxel_grid(current_prediction), voxel_res=(32,32,32))
 
-recover_latent(dummy_vox, 10.0)
+# Testing on dummy voxel
+#dummy_vox = tf.random.uniform(shape=(32, 32, 32))
+
+# Testing dataset.
+voxel_dataset, steps_epoch = get_voxel_dataset(batch_size=1, down_sample=True)
+
+for train_x in voxel_dataset:
+  train_x_partial = np.reshape(train_x[0].numpy(), (32,32,32))
+  plot_voxel(convert_to_sparse_voxel_grid(train_x_partial), voxel_res=(32,32,32))
+
+  #recover_latent(train_x, 1e-7)
+
+  current_prediction = ae(tf.cast(train_x[0], dtype=tf.float32))
+  current_prediction = np.reshape(current_prediction.numpy(), (32,32,32))
+  plot_voxel(convert_to_sparse_voxel_grid(current_prediction), voxel_res=(32,32,32))
+  

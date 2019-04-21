@@ -6,7 +6,7 @@ random.seed(42)
 from os import listdir
 from os.path import join, isfile
 
-def get_voxel_dataset(batch_size=64):
+def get_voxel_dataset(batch_size=64, down_sample=False):
     '''
     Setup our dataset object for our voxelizations.
     '''
@@ -15,16 +15,16 @@ def get_voxel_dataset(batch_size=64):
 
     # Specify which subfolders in the dexnet dataset to include.
     subfolders = [
-        'amazon_picking_challenge',
-        'Cat50_ModelDatabase',
-        'NTU3D',
-        'SHREC14LSGTB',
-        'autodesk',
-        'KIT',
-        'PrincetonShapeBenchmark',
-        # 'YCB', # Leave out YCB for testing.
-        'BigBIRD',
-        'ModelNet40'
+        # 'amazon_picking_challenge',
+        # 'Cat50_ModelDatabase',
+        # 'NTU3D',
+        # 'SHREC14LSGTB',
+        # 'autodesk',
+        # 'KIT',
+        # 'PrincetonShapeBenchmark',
+        'YCB', # Leave out YCB for testing.
+        # 'BigBIRD',
+        # 'ModelNet40'
     ]
 
     # Files holds the files as: subfolder/filename.npy. - each file is a voxel
@@ -53,7 +53,13 @@ def get_voxel_dataset(batch_size=64):
 
     # returns 1 voxel in the form of a tensor
     def _load_voxel(filename):
-        voxel_data = tf.convert_to_tensor(np.load(filename.numpy()))
+        voxels = np.load(filename.numpy())
+
+        # Downsample.
+        if down_sample:
+            voxels[:,:,16:] = 0
+        
+        voxel_data = tf.convert_to_tensor(voxels)
 
         # Convert to {-1, 2} as specified in the paper.
         # voxel_data = 3. * voxel_data - 1
