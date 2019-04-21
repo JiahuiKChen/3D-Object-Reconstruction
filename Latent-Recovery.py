@@ -72,9 +72,6 @@ decoder.summary()
 ################### MODIFIED BINARY CROSS ENTROPY LOSS FUNCTION ############
 # Binary cross entropy but with value clamping
 def lambda_binary_crossentropy(y_true, y_pred):
-  # Only want loss from the voxels that are present in the partial
-#   y_pred = tf.math.multiply(y_true, y_pred)
-
   y_pred = tf.clip_by_value(y_pred, 1e-7, 1.0 - 1e-7)
   binary_entr = y_true*((-y_true * tf.log(y_pred)) - ((1.0-y_true) * tf.log(1.0-y_pred)))
 
@@ -92,8 +89,6 @@ def compute_gradients(model, latent, partial):
     y = model(latent)
     loss = lambda_binary_crossentropy(partial, y)
 
-    # model.trainable_variables
-    #????? loss is scalar? how is it the gradient target?
     return tape.gradient(loss, latent), loss
 
 #
