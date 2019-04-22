@@ -70,6 +70,10 @@ ae = Model(inputs=voxel_input, outputs=reconstruction)
 model_checkpoint_file = 'model/ae_checkpoint'
 ae.load_weights(model_checkpoint_file)
 
+# Get Encoder portion of AE
+encoder = ae.layers[1]
+encoder.summary()
+
 # Get Decoder portion of AE
 decoder = ae.layers[2]
 decoder.summary()
@@ -106,10 +110,17 @@ def compute_gradients(model, latent, partial):
 #
 # Runs updates until loss is under loss_thresh
 #
-def recover_latent(partial, loss_thresh):
+def recover_latent(partial, loss_thresh, seed_latent_vector=None):
   # Latent vector starts as a random vector
-  curr_latent = tf.random.uniform(shape=(1, 100))
-  curr_latent = tf.Variable(curr_latent)
+  if seed_latent_vector is None:
+    curr_latent = tf.random.uniform(shape=(1, 100))
+    curr_latent = tf.Variable(curr_latent)
+  else:
+    curr_latent = tf.Variable(seed_latent_vector)
+
+  current_prediction = decoder(curr_latent)
+  current_prediction = np.reshape(current_prediction.numpy(), (32,32,32))
+  plot_voxel(convert_to_sparse_voxel_grid(current_prediction), voxel_res=(32,32,32))
 
   loss = float('inf')
   iter = 0
@@ -117,14 +128,15 @@ def recover_latent(partial, loss_thresh):
     print 'Iteration: ', str(iter)
     # Compute gradient and loss of current latent vector
     gradients, loss = compute_gradients(decoder, curr_latent, partial)
-    print loss
+    #print loss
     gradients = tf.reshape(gradients, (1, 100))
 
     # Updating latent vector according to gradient
     optimizer.apply_gradients(zip([gradients], [curr_latent]))
     iter += 1
 
-    if iter % 100 == 0:
+    if iter % 1000 == 0:
+      print loss
       current_prediction = decoder(curr_latent)
       current_prediction = np.reshape(current_prediction.numpy(), (32,32,32))
       plot_voxel(convert_to_sparse_voxel_grid(current_prediction), voxel_res=(32,32,32))
@@ -133,15 +145,19 @@ def recover_latent(partial, loss_thresh):
 #dummy_vox = tf.random.uniform(shape=(32, 32, 32))
 
 # Testing dataset.
-voxel_dataset, steps_epoch = get_voxel_dataset(batch_size=1, down_sample=True)
+train_dataset, test_dataset = get_voxel_dataset(batch_size=1, down_sample=True)
 
-for train_x in voxel_dataset:
-  train_x_partial = np.reshape(train_x[0].numpy(), (32,32,32))
+for train_x in train_dataset:
+  train_x_partial = np.reshape(train_x[0][1].numpy(), (32,32,32))
   plot_voxel(convert_to_sparse_voxel_grid(train_x_partial), voxel_res=(32,32,32))
 
-  #recover_latent(train_x, 1e-7)
+  use = raw_input("Use model? [y/n]")
 
-  current_prediction = ae(tf.cast(train_x[0], dtype=tf.float32))
-  current_prediction = np.reshape(current_prediction.numpy(), (32,32,32))
-  plot_voxel(convert_to_sparse_voxel_grid(current_prediction), voxel_res=(32,32,32))
+  if use == "y":
+    seed_latent_space = encoder(tf.cast(train_x[0][1], dtype=tf.float32))
+    recover_latent(train_x, 1e-7, seed_latent_space)
+
+  # current_prediction = ae(tf.cast(train_x[0], dtype=tf.float32))
+  # current_prediction = np.reshape(current_prediction.numpy(), (32,32,32))
+  # plot_voxel(convert_to_sparse_voxel_grid(current_prediction), voxel_res=(32,32,32))
   

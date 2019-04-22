@@ -6,6 +6,38 @@ random.seed(42)
 from os import listdir
 from os.path import join, isfile
 
+def make_dataset(files, batch_size):
+    '''
+    Create dataset from the provided fiels.
+    '''
+
+    # returns 1 voxel in the form of a tensor
+    def _load_voxel(filename):
+        voxels = np.load(filename.numpy())
+        voxel_data = tf.convert_to_tensor(voxels)
+        
+        # Downsample if asked - return both.
+        if down_sample:
+            down_voxels = np.array(voxels)
+            down_voxels[:,16:,:] = 0
+            down_voxel_data = tf.convert_to_tensor(down_voxels)
+            return tf.reshape(voxel_data, (32,32,32,1)), tf.reshape(down_voxel_data, (32,32,32,1))
+        else:
+            return tf.reshape(voxel_data, (32,32,32,1))
+
+    # Create dataset as file names. These are mapped when dataset
+    # is queried for next batch via _load_voxel to the full
+    # voxel representation.
+    dataset = tf.data.Dataset.from_tensor_slices(files)
+    # dataset = dataset.shuffle(buffer_size=10000)
+    # Converting dataset of voxel file names to dataset of voxels
+    dataset = dataset.map(
+        lambda filename: tuple(tf.py_function(
+            _load_voxel, [filename], [tf.float64])))
+    # dataset = dataset.repeat() # Don't need this because of our current eager execution approach.
+    dataset = dataset.batch(batch_size)
+    #dataset = dataset.prefetch(4)
+
 def get_voxel_dataset(batch_size=64, down_sample=False):
     '''
     Setup our dataset object for our voxelizations.
@@ -13,6 +45,7 @@ def get_voxel_dataset(batch_size=64, down_sample=False):
 
     data_path = '/dataspace/DexnetVoxels'
 
+    # TODO: Better way of setting these.
     # Specify which subfolders in the dexnet dataset to include.
     subfolders = [
         # 'amazon_picking_challenge',
@@ -22,9 +55,10 @@ def get_voxel_dataset(batch_size=64, down_sample=False):
         # 'autodesk',
         # 'KIT',
         # 'PrincetonShapeBenchmark',
-        'YCB', # Leave out YCB for testing.
+        # 'YCB', # Leave out YCB for testing.
         # 'BigBIRD',
-        # 'ModelNet40'
+        # 'ModelNet40',
+        'ModelNet40Alternate', # Alternate data augmentation.
     ]
 
     # Files holds the files as: subfolder/filename.npy. - each file is a voxel
@@ -40,46 +74,19 @@ def get_voxel_dataset(batch_size=64, down_sample=False):
     print "Dataset size: ", len(files)
 
     # Shuffling file names (so that dataset of voxels is randomized)
-    # random.shuffle(files)
-    # train_file_size = int(len(files) * 0.9)
-    # print "Train size: ", train_file_size
-    # train = files[:train_file_size]
-    # test = files[train_file_size:]
+    random.shuffle(files)
 
-    # # Load in the files.
-    # voxel_dataset = list(map(lambda filename: np.reshape(np.load(filename), (32,32,32,1))))
+    train_file_size = int(len(files) * 0.9)
 
-    # Create dataset from the loaded files.
+    #print "Train size: ", train_file_size
+    train_files = files[:train_file_size]
+    test_files = files[train_file_size:]
 
-    # returns 1 voxel in the form of a tensor
-    def _load_voxel(filename):
-        voxels = np.load(filename.numpy())
+    # Create train/test datasets.
+    train_dataset = make_dataset(train_files, batch_size)
+    test_dataset = make_dataset(test_files, batch_size)
 
-        # Downsample.
-        if down_sample:
-            voxels[:,:,16:] = 0
-        
-        voxel_data = tf.convert_to_tensor(voxels)
-
-        # Convert to {-1, 2} as specified in the paper.
-        # voxel_data = 3. * voxel_data - 1
-        
-        return tf.reshape(voxel_data, (32,32,32,1))
-
-    # Create dataset as file names. These are mapped when dataset
-    # is queried for next batch via _load_voxel to the full
-    # voxel representation.
-    dataset = tf.data.Dataset.from_tensor_slices(files)
-    # dataset = dataset.shuffle(buffer_size=10000)
-    # Converting dataset of voxel file names to dataset of voxels
-    dataset = dataset.map(
-        lambda filename: tuple(tf.py_function(
-            _load_voxel, [filename], [tf.float64])))
-    # dataset = dataset.repeat() # Don't need this because of our current eager execution approach.
-    dataset = dataset.batch(batch_size)
-    #dataset = dataset.prefetch(4)
-
-    return dataset, len(files) // batch_size
+    return train_dataset, test_dataset
 
 if __name__ == '__main__':
     dataset, n_ = get_voxel_dataset(batch_size=1)

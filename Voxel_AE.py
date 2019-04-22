@@ -1,5 +1,6 @@
 import numpy as np
 import time
+import os
 import tensorflow as tf
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
@@ -125,9 +126,15 @@ ae.summary()
 # Setup training using custom loss, and adam optimizer
 # ae.compile(optimizer='adam', loss=lambda_binary_crossentropy)
 
+# PARAMETERS: TODO: pass these plz.
 TRAIN = True
+model_name = "modelnet_alternate"
 
-model_checkpoint_file = 'model/ae_checkpoint'
+model_checkpoint_file = 'model/' + model_name + '_ae_checkpoint'
+model_logs_folder = 'logs/' + model_name
+
+if not os.path.exists(model_logs_folder):
+  os.makedirs(model_logs_folder)
 
 if TRAIN:
   # Settings:
@@ -151,19 +158,19 @@ if TRAIN:
     optimizer.apply_gradients(zip(gradients, variables))
 
   # Setup logging.
-  summary_writer = tf.contrib.summary.create_file_writer('./logs')
+  summary_writer = tf.contrib.summary.create_file_writer(model_logs_folder)
 
-  i = 40700
-  for epoch in range(10, EPOCHS + 1):
+  i = 0
+  for epoch in range(1, EPOCHS + 1):
     # Run through dataset doing batch updates.
     print "Epoch: ", epoch
     t0 = time.time()
 
     # Gets newly shuffled dataset of voxels each epochs
-    voxel_dataset, steps_epoch = get_voxel_dataset(batch_size=64)
+    train_dataset, test_dataset = get_voxel_dataset(batch_size=64)
 
     # Trains over all batches of the shuffled dataset
-    for train_x in voxel_dataset:
+    for train_x in train_dataset:
       gradients, loss = compute_gradients(ae, train_x)
       #print i, ",", loss
       apply_gradients(optimizer, gradients, ae.trainable_variables)
@@ -193,9 +200,9 @@ else:
   ae.load_weights(model_checkpoint_file)
 
   # Get tf.data.Dataset of our voxels.
-  voxel_dataset, steps_epoch = get_voxel_dataset(batch_size=1)
+  train_dataset, test_dataset = get_voxel_dataset(batch_size=1)
 
-  for train_x in voxel_dataset:
+  for train_x in test_dataset:
     # View input.
     input_tensor = tf.cast(train_x[0], dtype=tf.float32)
     input_npy = input_tensor.numpy().reshape((32,32,32))
