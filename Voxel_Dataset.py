@@ -1,7 +1,6 @@
 import tensorflow as tf
 import numpy as np
 import random
-random.seed(42)
 
 from os import listdir
 from os.path import join, isfile
@@ -45,7 +44,8 @@ def get_voxel_dataset(batch_size=64, down_sample=False):
     Setup our dataset object for our voxelizations.
     '''
 
-    data_path = '/dataspace/DexnetVoxels'
+    #data_path = '/dataspace/DexnetVoxels'
+    data_path = '/home/markvandermerwe/DexnetMeshes/'
 
     # TODO: Better way of setting these.
     # Specify which subfolders in the dexnet dataset to include.
@@ -59,8 +59,8 @@ def get_voxel_dataset(batch_size=64, down_sample=False):
         # 'PrincetonShapeBenchmark',
         # 'YCB', # Leave out YCB for testing.
         # 'BigBIRD',
-        # 'ModelNet40',
-        'ModelNet40Alternate', # Alternate data augmentation.
+        'ModelNet40',
+        # 'ModelNet40Alternate', # Alternate data augmentation.
     ]
 
     # Files holds the files as: subfolder/filename.npy. - each file is a voxel
@@ -70,25 +70,31 @@ def get_voxel_dataset(batch_size=64, down_sample=False):
         subfolder_path = join(data_path, subfolder)
         for f in listdir(subfolder_path):
             file_path = join(subfolder_path, f)
-            if isfile(file_path):
+            if isfile(file_path) and '.obj' not in file_path and '.binvox' not in file_path:
                 files.append(file_path)
 
     print "Dataset size: ", len(files)
 
     # Shuffling file names (so that dataset of voxels is randomized)
-    random.shuffle(files)
+    random.Random(42).shuffle(files)
 
-    train_file_size = int(len(files) * 0.9)
+    train_file_size = int(len(files) * 0.8)
+    validation_file_size = int(len(files) * 0.1)
 
     #print "Train size: ", train_file_size
     train_files = files[:train_file_size]
-    test_files = files[train_file_size:]
+    validation_files = files[train_file_size:train_file_size+validation_file_size]
+    test_files = files[train_file_size+validation_file_size:]
+
+    # Shuffle training samples.
+    random.shuffle(train_files)
 
     # Create train/test datasets.
     train_dataset = make_dataset(train_files, batch_size, down_sample)
+    validation_dataset = make_dataset(validation_files, batch_size, down_sample)
     test_dataset = make_dataset(test_files, batch_size, down_sample)
 
-    return train_dataset, test_dataset
+    return train_dataset, validation_dataset, test_dataset
 
 if __name__ == '__main__':
     dataset, n_ = get_voxel_dataset(batch_size=1)
