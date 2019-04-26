@@ -1,8 +1,11 @@
 import numpy as np
 import time
 import os
+import copy
 import tensorflow as tf
 tf.enable_eager_execution()
+
+import pdb
 
 ################### MODIFIED BINARY CROSS ENTROPY LOSS FUNCTION ############
 def lambda_binary_crossentropy(y_true, y_pred):
@@ -35,11 +38,13 @@ def f1_prediction(y_true, y_pred, threshold):
   precision = TP / (TP + FP)
   recall = TP / (TP + FN)
 
+  if (precision + recall) == 0:
+    return 0.0
+    
   f1 = 2 * ((precision * recall) / (precision + recall))
-  
   return f1
 
-def get_f1(dataset, model):
+def get_f1(dataset, model, threshold):
   '''
   Calculate the average f1 for the given model.
   '''
@@ -49,7 +54,7 @@ def get_f1(dataset, model):
   for element in dataset:
     input_tensor = tf.cast(element[0], dtype=tf.float32)
     y = model(input_tensor)
-    f1 = f1_prediction(input_tensor, y)
+    f1 = f1_prediction(element[0].numpy(), y.numpy(), threshold)
     accumulate_f1 += f1
     elems += 1
 

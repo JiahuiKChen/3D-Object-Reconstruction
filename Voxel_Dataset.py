@@ -78,8 +78,8 @@ def get_voxel_dataset(batch_size=64, down_sample=False):
     # Shuffling file names (so that dataset of voxels is randomized)
     random.Random(42).shuffle(files)
 
-    train_file_size = int(len(files) * 0.8)
-    validation_file_size = int(len(files) * 0.1)
+    train_file_size = int(len(files) * 0.9)
+    validation_file_size = 320
 
     #print "Train size: ", train_file_size
     train_files = files[:train_file_size]

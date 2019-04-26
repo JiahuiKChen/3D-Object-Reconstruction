@@ -56,24 +56,20 @@ def train_voxel_ae(model_name, epochs, batch_size, load_weights_file,  verbose):
 
   def update_tensorboard(train_dataset, validation_dataset):
     # Calculate losses/f1 at every epoch.
-    train_loss = get_loss(train_dataset, ae)
     validate_loss = get_loss(validation_dataset, ae)
-    train_f1 = get_f1(train_dataset, ae)
-    validate_f1 = get_f1(validation_dataset, ae)
+    validate_f1 = get_f1(validation_dataset, ae, 0.5)
 
     # Write to Tensorboard.
     with summary_writer.as_default():
       with tf.contrib.summary.always_record_summaries():
-        tf.contrib.summary.scalar("train_loss", train_loss, step=epoch)
         tf.contrib.summary.scalar("validate_loss", validate_loss, step=epoch)
-        tf.contrib.summary.scalar("train_f1", train_f1, step=epoch)
         tf.contrib.summary.scalar("validate_f1", validate_f1, step=epoch)
         
   for epoch in range(1, epochs + 1):
     # Run through dataset doing batch updates.
     print "Epoch: ", epoch
 
-    # Gets newly shuffled dataset of voxels each epochs
+    # Gets newly shuf
     train_dataset, validation_dataset, test_dataset = get_voxel_dataset(batch_size)
     update_tensorboard(train_dataset, validation_dataset)
 
@@ -81,6 +77,10 @@ def train_voxel_ae(model_name, epochs, batch_size, load_weights_file,  verbose):
     for train_x in train_dataset:
       gradients, loss = compute_gradients(ae, train_x)
       apply_gradients(optimizer, gradients, ae.trainable_variables)
-        
+
+    with summary_writer.as_default():
+      with tf.contrib.summary.always_record_summaries():
+        tf.contrib.summary.scalar("epoch_training_instantaneous_loss", loss, step=epoch)
+      
     # Checkpoint model.
     ae.save_weights(model_checkpoint_file)
