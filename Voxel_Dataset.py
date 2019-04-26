@@ -44,8 +44,7 @@ def get_voxel_dataset(batch_size=64, down_sample=False):
     Setup our dataset object for our voxelizations.
     '''
 
-    #data_path = '/dataspace/DexnetVoxels'
-    data_path = '/home/markvandermerwe/DexnetMeshes/'
+    data_path = '/dataspace/DexnetVoxels'
 
     # TODO: Better way of setting these.
     # Specify which subfolders in the dexnet dataset to include.
@@ -70,7 +69,7 @@ def get_voxel_dataset(batch_size=64, down_sample=False):
         subfolder_path = join(data_path, subfolder)
         for f in listdir(subfolder_path):
             file_path = join(subfolder_path, f)
-            if isfile(file_path) and '.obj' not in file_path and '.binvox' not in file_path:
+            if isfile(file_path):
                 files.append(file_path)
 
     print "Dataset size: ", len(files)
