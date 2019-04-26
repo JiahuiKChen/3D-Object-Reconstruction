@@ -140,7 +140,7 @@ if TRAIN:
   # Settings:
   EPOCHS = 100
 
-  ae.load_weights(model_checkpoint_file)
+  #ae.load_weights(model_checkpoint_file)
   
   # Use Adam optimizer.
   optimizer = AdamOptimizer(1e-4)

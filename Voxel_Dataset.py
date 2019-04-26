@@ -6,7 +6,7 @@ random.seed(42)
 from os import listdir
 from os.path import join, isfile
 
-def make_dataset(files, batch_size):
+def make_dataset(files, batch_size, down_sample):
     '''
     Create dataset from the provided fiels.
     '''
@@ -37,6 +37,8 @@ def make_dataset(files, batch_size):
     # dataset = dataset.repeat() # Don't need this because of our current eager execution approach.
     dataset = dataset.batch(batch_size)
     #dataset = dataset.prefetch(4)
+
+    return dataset
 
 def get_voxel_dataset(batch_size=64, down_sample=False):
     '''
@@ -83,8 +85,8 @@ def get_voxel_dataset(batch_size=64, down_sample=False):
     test_files = files[train_file_size:]
 
     # Create train/test datasets.
-    train_dataset = make_dataset(train_files, batch_size)
-    test_dataset = make_dataset(test_files, batch_size)
+    train_dataset = make_dataset(train_files, batch_size, down_sample)
+    test_dataset = make_dataset(test_files, batch_size, down_sample)
 
     return train_dataset, test_dataset
 
