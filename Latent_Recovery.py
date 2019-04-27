@@ -148,13 +148,13 @@ def recover_latent(partial, loss_thresh, seed_latent_vector=None):
 train_dataset, validate_dataset, test_dataset = get_voxel_dataset(batch_size=1, down_sample=True)
 
 for train_x in train_dataset:
-  train_x_partial = np.reshape(train_x[0][1].numpy(), (32,32,32))
+  train_x_partial = np.reshape(train_x[0][0][0].numpy(), (32,32,32))
   plot_voxel(convert_to_sparse_voxel_grid(train_x_partial), voxel_res=(32,32,32))
 
   use = raw_input("Use model? [y/n]")
 
   if use == "y":
-    seed_latent_space = encoder(tf.cast(train_x[0][1], dtype=tf.float32))
+    seed_latent_space = encoder(tf.reshape(tf.cast(train_x[0][0][0], dtype=tf.float32), shape=(1,32,32,32,1)))
     recover_latent(train_x, 1e-7, seed_latent_space)
 
   # current_prediction = ae(tf.cast(train_x[0], dtype=tf.float32))

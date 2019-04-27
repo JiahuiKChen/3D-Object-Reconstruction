@@ -5,6 +5,8 @@ import random
 from os import listdir
 from os.path import join, isfile
 
+import pdb
+
 def make_dataset(files, batch_size, down_sample):
     '''
     Create dataset from the provided fiels.
@@ -13,15 +15,16 @@ def make_dataset(files, batch_size, down_sample):
     # returns 1 voxel in the form of a tensor
     def _load_voxel(filename):
         voxels = np.load(filename.numpy())
-        voxel_data = tf.convert_to_tensor(voxels)
         
         # Downsample if asked - return both.
         if down_sample:
             down_voxels = np.array(voxels)
             down_voxels[:,16:,:] = 0
-            down_voxel_data = tf.convert_to_tensor(down_voxels)
-            return tf.reshape(voxel_data, (32,32,32,1)), tf.reshape(down_voxel_data, (32,32,32,1))
+            voxel_data = tf.reshape(tf.convert_to_tensor(voxels), (32,32,32,1))
+            down_voxel_data = tf.reshape(tf.convert_to_tensor(down_voxels), (32,32,32,1))
+            return tf.convert_to_tensor([down_voxel_data, voxel_data])
         else:
+            voxel_data = tf.convert_to_tensor(voxels)
             return tf.reshape(voxel_data, (32,32,32,1))
 
     # Create dataset as file names. These are mapped when dataset
@@ -58,8 +61,8 @@ def get_voxel_dataset(batch_size=64, down_sample=False):
         # 'PrincetonShapeBenchmark',
         # 'YCB', # Leave out YCB for testing.
         # 'BigBIRD',
-        'ModelNet40',
-        # 'ModelNet40Alternate', # Alternate data augmentation.
+        # 'ModelNet40',
+        'ModelNet40Alternate', # Alternate data augmentation.
     ]
 
     # Files holds the files as: subfolder/filename.npy. - each file is a voxel
