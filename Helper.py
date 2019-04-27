@@ -30,21 +30,21 @@ def f1_prediction(y_true, y_pred, threshold):
   binary_voxel_batch = copy.deepcopy(y_pred)
   binary_voxel_batch[y_pred >= threshold] = 1
   binary_voxel_batch[y_pred < threshold] = 0
-  TP = np.sum(binary_voxel_batch[y_true == 1] == 1)
-  FN = np.sum(binary_voxel_batch[y_true == 1] == 0)
-  FP = np.sum(binary_voxel_batch[y_true == 0] == 1)
-  TN = np.sum(binary_voxel_batch[y_true == 0] == 0)
+  TP = float(np.sum(binary_voxel_batch[y_true == 1] == 1))
+  FN = float(np.sum(binary_voxel_batch[y_true == 1] == 0))
+  FP = float(np.sum(binary_voxel_batch[y_true == 0] == 1))
+  TN = float(np.sum(binary_voxel_batch[y_true == 0] == 0))
 
   precision = TP / (TP + FP)
   recall = TP / (TP + FN)
 
-  if (precision + recall) == 0:
+  if (precision + recall) == 0.0:
     return 0.0
     
   f1 = 2 * ((precision * recall) / (precision + recall))
   return f1
 
-def get_f1(dataset, model, threshold):
+def get_f1(dataset, model, threshold, i=None):
   '''
   Calculate the average f1 for the given model.
   '''
@@ -58,9 +58,12 @@ def get_f1(dataset, model, threshold):
     accumulate_f1 += f1
     elems += 1
 
+    if i is not None and elems == i:
+      break
+
   return accumulate_f1 / elems
 
-def get_loss(dataset, model):
+def get_loss(dataset, model, i=None):
   '''
   Calculate the current loss for the given model.
   '''
@@ -73,5 +76,8 @@ def get_loss(dataset, model):
     loss = lambda_binary_crossentropy(input_tensor, y)
     accumulate_loss += loss
     elems += 1
+
+    if i is not None and elems == i:
+      break
 
   return accumulate_loss / elems

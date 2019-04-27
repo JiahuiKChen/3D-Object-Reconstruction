@@ -145,7 +145,7 @@ def recover_latent(partial, loss_thresh, seed_latent_vector=None):
 #dummy_vox = tf.random.uniform(shape=(32, 32, 32))
 
 # Testing dataset.
-train_dataset, test_dataset = get_voxel_dataset(batch_size=1, down_sample=True)
+train_dataset, validate_dataset, test_dataset = get_voxel_dataset(batch_size=1, down_sample=True)
 
 for train_x in train_dataset:
   train_x_partial = np.reshape(train_x[0][1].numpy(), (32,32,32))

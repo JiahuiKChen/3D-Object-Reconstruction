@@ -1,2 +1,2 @@
-model_checkpoint_path: "modelnet_alternate_ae_checkpoint"
-all_model_checkpoint_paths: "modelnet_alternate_ae_checkpoint"
+model_checkpoint_path: "modelnet40_alternate_ae_checkpoint"
+all_model_checkpoint_paths: "modelnet40_alternate_ae_checkpoint"
