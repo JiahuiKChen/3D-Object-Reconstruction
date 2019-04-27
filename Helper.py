@@ -5,6 +5,8 @@ import copy
 import tensorflow as tf
 tf.enable_eager_execution()
 
+from tensorflow.keras.losses import mean_squared_error
+
 import pdb
 
 ################### MODIFIED BINARY CROSS ENTROPY LOSS FUNCTION ############
@@ -75,6 +77,28 @@ def get_loss(dataset, model, i=None):
     y = model(input_tensor)
     loss = lambda_binary_crossentropy(input_tensor, y)
     accumulate_loss += loss
+    elems += 1
+
+    if i is not None and elems == i:
+      break
+
+  return accumulate_loss / elems
+
+def get_latent_loss(dataset, partial_encoder, full_encoder, i=None):
+  '''
+  Calculate MSE Loss for the encoder to latent space. Note, dataset should return
+  both latent and full.
+  '''
+  accumulate_loss = 0.0
+  elems = 0
+
+  for element in dataset:
+    partial_tensor = tf.cast(element[0][:,0,:,:,:,:], dtype=tf.float32)
+    full_tensor = tf.cast(element[0][:,1,:,:,:,:], dtype=tf.float32)
+    y_true = full_encoder(full_tensor)
+    y_pred = partial_encoder(partial_tensor)
+    loss = mean_squared_error(y_true, y_pred)
+    accumulate_loss += tf.reduce_sum(loss)
     elems += 1
 
     if i is not None and elems == i:
