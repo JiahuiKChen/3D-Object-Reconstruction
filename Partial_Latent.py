@@ -57,7 +57,7 @@ def train_partial_to_full(model_name, epochs, batch_size, load_weights_file,  ve
     # Setup logging.
     summary_writer = tf.contrib.summary.create_file_writer(model_logs_folder)
 
-    def update_tensorboard(train_dataset, validation_dataset):
+    def update_tensorboard(train_dataset, validation_dataset, current_validate_loss):
       # Calculate losses/f1 at every epoch.
       train_loss = get_latent_loss(train_dataset, partial_encoder, full_encoder, 100)
       validate_loss = get_latent_loss(validation_dataset, partial_encoder, full_encoder)
@@ -68,13 +68,20 @@ def train_partial_to_full(model_name, epochs, batch_size, load_weights_file,  ve
           tf.contrib.summary.scalar("train_loss", train_loss, step=epoch)
           tf.contrib.summary.scalar("validate_loss", validate_loss, step=epoch)
 
+      # Checkpoint model if improvement.
+      if validate_loss < current_validate_loss:
+        partial_encoder.save_weights(model_checkpoint_file)
+        return validate_loss
+      return current_validate_loss
+
+    current_validate_loss = float('inf')
     for epoch in range(1, epochs + 1):
       # Run through dataset doing batch updates.
       print "Epoch: ", epoch
 
       # Gets newly shuf
       train_dataset, validation_dataset, test_dataset = get_voxel_dataset(batch_size, down_sample=True)
-      update_tensorboard(train_dataset, validation_dataset)
+      current_validate_loss = update_tensorboard(train_dataset, validation_dataset, current_validate_loss)
 
       # Trains over all batches of the shuffled dataset
       for train_x in train_dataset:
@@ -83,6 +90,3 @@ def train_partial_to_full(model_name, epochs, batch_size, load_weights_file,  ve
         full_latent = full_encoder(full_tensor)
         gradients, loss = compute_gradients(partial_encoder, partial_tensor, full_latent)
         apply_gradients(optimizer, gradients, partial_encoder.trainable_variables)
-
-      # Checkpoint model.
-      partial_encoder.save_weights(model_checkpoint_file)

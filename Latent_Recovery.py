@@ -67,12 +67,13 @@ ae = Model(inputs=voxel_input, outputs=reconstruction)
 # ae.summary()
 
 # Load already trained weights
+partial_model_checkpoint_file = 'model/partial_ae_checkpoint'
 model_checkpoint_file = 'model/modelnet40_alternate_ae_checkpoint'
 ae.load_weights(model_checkpoint_file)
 
 # Get Encoder portion of AE
 encoder = ae.layers[1]
-encoder.summary()
+encoder.load_weights(partial_model_checkpoint_file)
 
 # Get Decoder portion of AE
 decoder = ae.layers[2]
@@ -124,8 +125,9 @@ def recover_latent(partial, loss_thresh, seed_latent_vector=None):
 
   loss = float('inf')
   iter = 0
-  while loss > loss_thresh:
-    print 'Iteration: ', str(iter)
+  # while loss > loss_thresh:
+  for i in range(5):
+    # print 'Iteration: ', str(iter)
     # Compute gradient and loss of current latent vector
     gradients, loss = compute_gradients(decoder, curr_latent, partial)
     #print loss
@@ -147,9 +149,11 @@ def recover_latent(partial, loss_thresh, seed_latent_vector=None):
 # Testing dataset.
 train_dataset, validate_dataset, test_dataset = get_voxel_dataset(batch_size=1, down_sample=True)
 
-for train_x in train_dataset:
+for train_x in validate_dataset:
   train_x_partial = np.reshape(train_x[0][0][0].numpy(), (32,32,32))
+  train_x_full = np.reshape(train_x[0][0][1].numpy(), (32,32,32))
   plot_voxel(convert_to_sparse_voxel_grid(train_x_partial), voxel_res=(32,32,32))
+  plot_voxel(convert_to_sparse_voxel_grid(train_x_full), voxel_res=(32,32,32))
 
   use = raw_input("Use model? [y/n]")
 
