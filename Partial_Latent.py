@@ -85,4 +85,4 @@ def train_partial_to_full(model_name, epochs, batch_size, load_weights_file,  ve
         apply_gradients(optimizer, gradients, partial_encoder.trainable_variables)
 
       # Checkpoint model.
-      encoder.save_weights(model_checkpoint_file)
+      partial_encoder.save_weights(model_checkpoint_file)
