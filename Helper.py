@@ -46,7 +46,7 @@ def f1_prediction(y_true, y_pred, threshold):
   f1 = 2 * ((precision * recall) / (precision + recall))
   return f1
 
-def get_f1(dataset, model, threshold, i=None):
+def get_f1(dataset, model, threshold, i=None, partial=False):
   '''
   Calculate the average f1 for the given model.
   '''
@@ -54,9 +54,15 @@ def get_f1(dataset, model, threshold, i=None):
   elems = 0
 
   for element in dataset:
-    input_tensor = tf.cast(element[0], dtype=tf.float32)
-    y = model(input_tensor)
-    f1 = f1_prediction(element[0].numpy(), y.numpy(), threshold)
+    if partial:
+      partial_tensor = tf.cast(element[0][:,0,:,:,:,:], dtype=tf.float32)
+      full_tensor = tf.cast(element[0][:,1,:,:,:,:], dtype=tf.float32)
+      y = model(partial_tensor)
+      f1 = f1_prediction(full_tensor.numpy(), y.numpy(), threshold)
+    else:
+      input_tensor = tf.cast(element[0], dtype=tf.float32)
+      y = model(input_tensor)
+      f1 = f1_prediction(element[0].numpy(), y.numpy(), threshold)
     accumulate_f1 += f1
     elems += 1
 
