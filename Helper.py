@@ -37,8 +37,15 @@ def f1_prediction(y_true, y_pred, threshold):
   FP = float(np.sum(binary_voxel_batch[y_true == 0] == 1))
   TN = float(np.sum(binary_voxel_batch[y_true == 0] == 0))
 
-  precision = TP / (TP + FP)
-  recall = TP / (TP + FN)
+  if (TP + FP) == 0:
+    precision = 0.0
+  else:
+    precision = TP / (TP + FP)
+
+  if (TP + FN) == 0:
+    recall = 0.0
+  else:
+    recall = TP / (TP + FN)
 
   if (precision + recall) == 0.0:
     return 0.0
@@ -104,8 +111,9 @@ def get_latent_loss(dataset, partial_encoder, full_encoder, i=None):
     y_true = full_encoder(full_tensor)
     y_pred = partial_encoder(partial_tensor)
     loss = mean_squared_error(y_true, y_pred)
-    accumulate_loss += tf.reduce_sum(loss)
+    accumulate_loss += tf.reduce_mean(loss)
     elems += 1
+    print elems
 
     if i is not None and elems == i:
       break

@@ -84,3 +84,21 @@ def train_voxel_ae(model_name, epochs, batch_size, load_weights_file,  verbose):
       
     # Checkpoint model.
     ae.save_weights(model_checkpoint_file)
+
+
+def autoencoder_metrics(weights_file, verbose=False):
+  '''
+  Determine the F1 score for datasets on the embedding ability of
+  the autoencoder.
+  '''
+
+  # Load the autoencoder.
+  ae = get_voxel_ae(weights_file, verbose)
+  
+  train_dataset, validation_dataset, test_dataset = get_voxel_dataset(batch_size=1)
+
+  train_f1 = get_f1(train_dataset, ae, 0.5)
+  validation_f1 = get_f1(validation_dataset, ae, 0.5)
+  test_f1 = get_f1(test_dataset, ae, 0.5)
+
+  print "F1: Train: ", train_f1, ", Validate: ", validation_f1, ", Test: ", test_f1, "."
